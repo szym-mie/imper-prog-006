@@ -60,12 +60,21 @@ int get_domain(pair*, int, int*);
 int composition (pair*, int, pair*, int, pair*);
 
 // Comparator for pair
-int cmp_pair (const void *a, const void *b) {
+int cmp_pair_x (const void *a, const void *b) {
 	pair *pa = (pair *) a;
 	pair *pb = (pair *) b;
 
 	if (pa->second != pb->second) return pa->second - pb->second;
 	if (pa->first != pb->first) return pa->first - pb->first;
+	return 0;
+}
+
+int cmp_pair_y (const void *a, const void *b) {
+	pair *pa = (pair *) a;
+	pair *pb = (pair *) b;
+
+	if (pa->first != pb->first) return pa->first - pb->first;
+	if (pa->second != pb->second) return pa->second - pb->second;
 	return 0;
 }
 
@@ -78,7 +87,7 @@ int insert_int (int *tab, int n, int new_element) {
 int add_relation (pair *tab, int n, pair new_pair) {
 	for (int i = 0; i < n; i++)
 	{
-		if (!cmp_pair(&new_pair, tab+i)) return 0;
+		if (!cmp_pair_x(&new_pair, tab+i)) return 0;
 	}
 
 	memcpy(tab+n, &new_pair, sizeof(pair));
@@ -89,7 +98,7 @@ int add_relation (pair *tab, int n, pair new_pair) {
 
 int is_reflexive(pair *p, int n) 
 {
-	qsort(p, n, sizeof(pair), cmp_pair);
+	qsort(p, n, sizeof(pair), cmp_pair_x);
 	int cfirst = p->first;
 	int has_refl = 0;
 	for (int i = 0; i < n; i++) 
@@ -128,7 +137,7 @@ int ident_pair(pair *a)
 
 int is_symmetric(pair *p, int n)
 {
-	qsort(p, n, sizeof(pair), cmp_pair);
+	qsort(p, n, sizeof(pair), cmp_pair_x);
 	int m =  n / 2 + n % 2; // round up
 	for (int i = 0; i < m; i++)
 	{
@@ -151,7 +160,7 @@ int is_symmetric(pair *p, int n)
 
 int is_antisymmetric(pair *p, int n)
 {
-	qsort(p, n, sizeof(pair), cmp_pair);
+	qsort(p, n, sizeof(pair), cmp_pair_x);
 	int m =  n / 2 + n % 2; // round up
 	for (int i = 0; i < m; i++)
 	{
@@ -178,7 +187,7 @@ int is_asymmetric(pair *p, int n)
 
 int is_transitive(pair *p, int n)
 {
-	qsort(p, n, sizeof(pair), cmp_pair);
+	qsort(p, n, sizeof(pair), cmp_pair_x);
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n; j++)
@@ -217,22 +226,57 @@ int is_total_order(pair *p, int n)
 
 int is_connected(pair *p, int n)
 {
-	return 0;
+	for (int i = 0; i < n; i++)
+	{
+	}
+
+	return 1;
 }
 
 int find_max_elements(pair *p, int n, int *ia)
 {
+	qsort(p, n, sizeof(pair), cmp_pair_y);
+	int cn = p->second;
+	int is_max = 1;
+
+	for (int i = 0; i < n; i++)
+	{
+		if (cn != (p+i)->second)
+		{
+			if (is_max) *(ia++) = cn;
+			cn = (p+i)->second;
+			is_max = 1;
+		}
+		if ((p+i)->first > cn) is_max = 0;
+	}
+	
 	return 0;
 }
 
 int find_min_elements(pair *p, int n, int *ia)
 {
+	qsort(p, n, sizeof(pair), cmp_pair_x);
+	int cn = p->first;
+	int is_max = 1;
+
+	for (int i = 0; i < n; i++)
+	{
+		if (cn != (p+i)->first)
+		{
+			if (is_max) *(ia++) = cn;
+			cn = (p+i)->first;
+			is_max = 1;
+		}
+		// TODO check
+		if ((p+i)->second < cn) is_max = 0;
+	}
+	
 	return 0;
 }
 
 int get_domain(pair *p, int n, int *ia)
 {
-	qsort(p, n, sizeof(pair), cmp_pair);
+	qsort(p, n, sizeof(pair), cmp_pair_x);
 	int c = p->first;
 	*ia = c;
 	int s = 1;
