@@ -6,8 +6,8 @@
 #define MAX_RANGE 100
 
 typedef struct {
-	int first;
-	int second;
+	int first; // aka 'x'
+	int second; // aka 'y'
 } pair;
 
 // Add pair to existing relation if not already there
