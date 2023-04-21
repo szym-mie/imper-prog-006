@@ -60,21 +60,21 @@ int get_domain(pair*, int, int*);
 int composition (pair*, int, pair*, int, pair*);
 
 // Comparator for pair
-int cmp_pair_x (const void *a, const void *b) {
+int cmp_pair_x(const void *a, const void *b) {
 	pair *pa = (pair *) a;
 	pair *pb = (pair *) b;
 
-	if (pa->second != pb->second) return pa->second - pb->second;
 	if (pa->first != pb->first) return pa->first - pb->first;
+	if (pa->second != pb->second) return pa->second - pb->second;
 	return 0;
 }
 
-int cmp_pair_y (const void *a, const void *b) {
+int cmp_pair_y(const void *a, const void *b) {
 	pair *pa = (pair *) a;
 	pair *pb = (pair *) b;
 
-	if (pa->first != pb->first) return pa->first - pb->first;
 	if (pa->second != pb->second) return pa->second - pb->second;
+	if (pa->first != pb->first) return pa->first - pb->first;
 	return 0;
 }
 
@@ -267,7 +267,6 @@ int find_min_elements(pair *p, int n, int *ia)
 			cn = (p+i)->first;
 			is_max = 1;
 		}
-		// TODO check
 		if ((p+i)->second < cn) is_max = 0;
 	}
 	
@@ -294,9 +293,47 @@ int get_domain(pair *p, int n, int *ia)
 	return s;
 }
 
+/*
+ * p, r - input relations
+ * n, m - sizes of input relations (in order of input relations)
+ * s - output relation
+ */
 int composition (pair *p, int n, pair *r, int m, pair *s)
 {
-	return 0;
+	int k = 0;
+
+	qsort(p, n, sizeof(pair), cmp_pair_y);
+	qsort(r, m, sizeof(pair), cmp_pair_x);
+	int a, b;
+
+	int i = 0;
+	int j = 0;
+
+	while (i < n && j < m)
+	{
+		a = (p+i)->second;
+		b = (r+j)->first;
+		
+		if (a == b)
+		{
+			// find all pairs from 'r' that have same 'x'
+			for (int js = j; js < m; js++)
+			{
+				if ((r+js)->first != b) break;
+				(s+k)->first = (p+i)->first;
+				(s+k)->second = (r+js)->second;
+				k++;
+			}
+			i++;
+			continue;
+		}
+		
+		// seek next number to close the gap
+		if (a < b) i++;
+		else j++;
+	}
+
+	return k;
 }
 
 // Read number of pairs, n, and then n pairs of ints
