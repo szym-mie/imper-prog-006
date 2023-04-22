@@ -78,9 +78,23 @@ int cmp_pair_y(const void *a, const void *b) {
 	return 0;
 }
 
+int cmp_int(const void *a, const void *b) {
+	int *ia = (int *) a;
+	int *ib = (int *) b;
+
+	return *ia - *ib;
+}
+
 int insert_int (int *tab, int n, int new_element) {
-	// no use
-	return 0;
+	for (int i = 0; i < n; i++)
+	{
+		if (new_element == *(tab+i)) return 0;
+	}
+
+	*(tab+n) = new_element;
+
+	return 1;
+
 }
 
 // Add pair to existing relation if not already there
@@ -198,7 +212,6 @@ int is_transitive(pair *p, int n)
 			{
 				if ((p+k)->second == (p+j)->second)
 				{
-					puts("has rel");
 					has_rel = 1;
 					break;
 				}
@@ -226,8 +239,50 @@ int is_total_order(pair *p, int n)
 
 int is_connected(pair *p, int n)
 {
-	for (int i = 0; i < n; i++)
+	int *da = calloc(n, sizeof(int)); // domain
+	int *ca = calloc(n, sizeof(int)); // domain element occurance count
+	pair *na = calloc(n, sizeof(pair)); // non-redundant pair array (first element smoler than second)
+	if (da == NULL || ca == NULL || na == NULL) 
 	{
+		free(da);
+		free(ca);
+		free(na);
+		return 0;
+	}
+
+	int dc = get_domain(p, n, da);
+	
+	int m = 0;
+	pair t;
+	for (int i = 0; i < n; i++) 
+	{
+		if ((p+i)->first > (p+i)->second)
+		{
+			t.first = (p+i)->second;
+			t.second = (p+i)->first;
+		}
+		else
+		{
+			t.first = (p+i)->first;
+			t.second = (p+i)->second;
+		}
+
+		if (add_relation(na, m, t)) m++;
+	}
+
+	int dx;
+	for (int i = 0; i < m; i++)
+	{
+		for (int k = 0; k < dc; k++)
+		{
+			dx = *(da+k);
+			if (dx == (p+i)->first || dx == (p+i)->second) (*(ca+k))++;
+		}
+	}
+
+	for (int i = 0; i < dc; i++)
+	{
+		if (*(ca+i) < dc) return 0;
 	}
 
 	return 1;
@@ -235,60 +290,77 @@ int is_connected(pair *p, int n)
 
 int find_max_elements(pair *p, int n, int *ia)
 {
-	qsort(p, n, sizeof(pair), cmp_pair_y);
-	int cn = p->second;
-	int is_max = 1;
-
-	for (int i = 0; i < n; i++)
-	{
-		if (cn != (p+i)->second)
-		{
-			if (is_max) *(ia++) = cn;
-			cn = (p+i)->second;
-			is_max = 1;
-		}
-		if ((p+i)->first > cn) is_max = 0;
-	}
-	
-	return 0;
-}
-
-int find_min_elements(pair *p, int n, int *ia)
-{
 	qsort(p, n, sizeof(pair), cmp_pair_x);
 	int cn = p->first;
 	int is_max = 1;
+	int j = 0;
 
 	for (int i = 0; i < n; i++)
 	{
 		if (cn != (p+i)->first)
 		{
-			if (is_max) *(ia++) = cn;
+			if (is_max)
+			{
+				*(ia++) = cn;
+				j++;
+			}
 			cn = (p+i)->first;
 			is_max = 1;
 		}
-		if ((p+i)->second < cn) is_max = 0;
+		if ((p+i)->second != cn) is_max = 0;
+	}
+
+	if (is_max)
+	{
+		*(ia++) = cn;
+		j++;
 	}
 	
-	return 0;
+	return j;
+}
+
+int find_min_elements(pair *p, int n, int *ia)
+{
+	qsort(p, n, sizeof(pair), cmp_pair_y);
+	int cn = p->second;
+	int is_min = 1;
+	int j = 0;
+
+	for (int i = 0; i < n; i++)
+	{
+		if (cn != (p+i)->second)
+		{
+			if (is_min) 
+			{
+				*(ia++) = cn;
+				j++;
+			}
+			cn = (p+i)->second;
+			is_min = 1;
+		}
+		if ((p+i)->first != cn) is_min = 0;
+	}
+
+	if (is_min)
+	{
+		*(ia++) = cn;
+		j++;
+	}
+	
+	return j;
 }
 
 int get_domain(pair *p, int n, int *ia)
 {
-	qsort(p, n, sizeof(pair), cmp_pair_x);
-	int c = p->first;
-	*ia = c;
-	int s = 1;
+	int s = 0;
 
-	for (int i = 1; i < n; i++)
+	for (int i = 0; i < n; i++)
 	{
-		if ((p+i)->first != c)
-		{
-			c = (p+i)->first;
-			*(++ia) = c;
-			s++;
-		}
+		if (insert_int(ia, s, (p+i)->first)) s++;
+		if (insert_int(ia, s, (p+i)->second)) s++;
 	}
+
+	qsort(ia, s, sizeof(int), cmp_int);
 
 	return s;
 }
@@ -309,6 +381,8 @@ int composition (pair *p, int n, pair *r, int m, pair *s)
 	int i = 0;
 	int j = 0;
 
+	pair t;
+
 	while (i < n && j < m)
 	{
 		a = (p+i)->second;
@@ -320,9 +394,9 @@ int composition (pair *p, int n, pair *r, int m, pair *s)
 			for (int js = j; js < m; js++)
 			{
 				if ((r+js)->first != b) break;
-				(s+k)->first = (p+i)->first;
-				(s+k)->second = (r+js)->second;
-				k++;
+				t.first = (p+i)->first;
+				t.second = (r+js)->second;
+				if (add_relation(s, k, t)) k++;
 			}
 			i++;
 			continue;
@@ -356,7 +430,9 @@ int read_relation(pair *relation) {
 }
 
 void print_int_array(int *array, int n) {
+	printf("%d\n", n);
 	for (int i = 0; i < n; i++) printf("%d ", *(array+i));
+	printf("\n");
 }
 
 int main(void) {
